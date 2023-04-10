@@ -1,45 +1,22 @@
-# inspired by https://github.com/robertd/alpine-aws-cdk/blob/master/Dockerfile.v2
-ARG KUBECTL_VERSION=1.25.8
-FROM alexkuzko/${KUBECTL_VERSION}
+ARG ALPINE_VERSION=3.16
 
-ARG AWSCDK_VERSION=2.59.0
-# override aws-cli v2 default pager
-ENV AWS_PAGER=""
+# Ignore to update versions here (and after FROM alpine line below), example:
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.25.8 -t alexkuzko/k8s:1.25.8 -t alexkuzko/k8s:1.25 .
+# to build AWS CDK based on Node LTS image:
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.25.8 -t alexkuzko/k8s-cdk:1.25.8 -t alexkuzko/k8s-cdk:1.25 -f Dockerfile.node .
 
+# replaced python image with node image as it will be easier to install python than compile node
+#FROM python:3.10.5-alpine${ALPINE_VERSION}
+FROM node:lts-alpine${ALPINE_VERSION}
 
-RUN npm i --location=global npm
-RUN npm i --location=global aws-cdk@${AWSCDK_VERSION}
-
-
-# ========================
-RUN apk add --no-cache git unzip groff build-base libffi-dev cmake
-RUN git clone --single-branch --depth 1 -b ${AWS_CLI_VERSION} https://github.com/aws/aws-cli.git
-
-WORKDIR aws-cli
-RUN python -m venv venv
-RUN . venv/bin/activate
-RUN scripts/installers/make-exe
-RUN unzip -q dist/awscli-exe.zip
-RUN aws/install --bin-dir /aws-cli-bin
-RUN /aws-cli-bin/aws --version
-
-# reduce image size: remove autocomplete and examples
-RUN rm -rf \
-    /usr/local/aws-cli/v2/current/dist/aws_completer \
-    /usr/local/aws-cli/v2/current/dist/awscli/data/ac.index \
-    /usr/local/aws-cli/v2/current/dist/awscli/examples
-RUN find /usr/local/aws-cli/v2/current/dist/awscli/data -name completions-1*.json -delete
-RUN find /usr/local/aws-cli/v2/current/dist/awscli/botocore/data -name examples-1.json -delete
-# ========================
-
-FROM python:3.10.5-alpine${ALPINE_VERSION}
-
+ARG AWS_CLI_VERSION=2.9.1
 ARG HELM_VERSION=3.10.2
 ARG KUBECTL_VERSION=1.25.8
 ARG KUSTOMIZE_VERSION=v4.5.7
 ARG KUBESEAL_VERSION=0.19.2
 # gcr.io/google.com/cloudsdktool/google-cloud-cli
 ARG CLOUD_SDK_VERSION=423.0.0
+ARG AWSCDK_VERSION=2.59.0
 
 # Install helm (latest release)
 # ENV BASE_URL="https://storage.googleapis.com/kubernetes-helm"
@@ -49,7 +26,8 @@ RUN apk add --update --no-cache curl ca-certificates bash git && \
     curl -sL ${BASE_URL}/${TAR_FILE} | tar -xvz && \
     mv linux-amd64/helm /usr/bin/helm && \
     chmod +x /usr/bin/helm && \
-    rm -rf linux-amd64
+    rm -rf linux-amd64 && \
+    rm -rf /var/cache/apk/*
 
 # add helm-diff
 RUN helm plugin install https://github.com/databus23/helm-diff && rm -rf /tmp/helm-*
@@ -76,15 +54,57 @@ RUN curl -sL "https://github.com/weaveworks/eksctl/releases/latest/download/eksc
     mv /tmp/eksctl /usr/bin && \
     chmod +x /usr/bin/eksctl
 
-# copy compiled awscli v2
-COPY --from=builder /usr/local/aws-cli/ /usr/local/aws-cli/
-COPY --from=builder /aws-cli-bin/ /usr/local/bin/
+# copy compiled awscli v2 (replaced with alpine compatible glibc)
+#COPY --from=builder /usr/local/aws-cli/ /usr/local/aws-cli/
+#COPY --from=builder /aws-cli-bin/ /usr/local/bin/
+# Install awscli v2
+# https://github.com/aws/aws-cli/issues/4685#issuecomment-615872019
+# install glibc compatibility for alpine
+ENV GLIBC_VER=2.34-r0
+# override aws-cli v2 default pager
+ENV AWS_PAGER=""
+RUN apk --no-cache add \
+        binutils \
+        curl \
+    && curl -sL https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub -o /etc/apk/keys/sgerrand.rsa.pub \
+    && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-${GLIBC_VER}.apk \
+    && curl -sLO https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VER}/glibc-bin-${GLIBC_VER}.apk \
+    && apk add --force-overwrite --no-cache \
+        glibc-${GLIBC_VER}.apk \
+        glibc-bin-${GLIBC_VER}.apk \
+    && curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWS_CLI_VERSION}.zip -o awscliv2.zip \
+    && unzip awscliv2.zip \
+    && aws/install \
+    && rm -rf \
+        awscliv2.zip \
+        aws \
+        /usr/local/aws-cli/v2/*/dist/aws_completer \
+        /usr/local/aws-cli/v2/*/dist/awscli/data/ac.index \
+        /usr/local/aws-cli/v2/*/dist/awscli/examples \
+    && apk --no-cache del \
+        binutils \
+    && rm glibc-${GLIBC_VER}.apk \
+    && rm glibc-bin-${GLIBC_VER}.apk \
+    && rm -rf /var/cache/apk/*
 
 # Install jq
-RUN apk add --update --no-cache jq yq
+RUN apk add --update --no-cache jq yq && \
+    rm -rf /var/cache/apk/*
 
 # Install for envsubst
-RUN apk add --update --no-cache gettext
+RUN apk add --update --no-cache gettext && \
+    rm -rf /var/cache/apk/*
+
+# Install python3
+RUN apk add --update --no-cache python3 python3-dev && \
+    python3 -m ensurepip && \
+    pip3 install --upgrade pip && \
+    pip3 install boto3 json-spec yamllint && \
+    rm -rf /var/cache/apk/*
+
+# Install aws-cdk
+RUN npm i --location=global npm
+RUN npm i --location=global aws-cdk@${AWSCDK_VERSION}
 
 # Install kubeseal
 RUN curl -L https://github.com/bitnami-labs/sealed-secrets/releases/download/v${KUBESEAL_VERSION}/kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz -o - | tar xz -C /usr/bin/ && \
