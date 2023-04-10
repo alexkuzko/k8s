@@ -2,13 +2,17 @@ ARG ALPINE_VERSION=3.16
 FROM python:3.10.5-alpine${ALPINE_VERSION} as builder
 
 # Ignore to update versions here (and after FROM alpine line below), example:
-# docker build --no-cache --build-arg KUBECTL_VERSION=1.24.8 -t alexkuzko/k8s:1.24.8 -t alexkuzko/k8s:1.24 .
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.25.8 -t alexkuzko/k8s:1.25.8 -t alexkuzko/k8s:1.25 .
+# to build AWS CDK based on Node LTS image:
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.25.8 -t alexkuzko/k8s-cdk:1.25.8 -t alexkuzko/k8s-cdk:1.25 -f Dockerfile.node .
 
 ARG AWS_CLI_VERSION=2.9.1
 ARG HELM_VERSION=3.10.2
-ARG KUBECTL_VERSION=1.24.8
+ARG KUBECTL_VERSION=1.25.8
 ARG KUSTOMIZE_VERSION=v4.5.7
 ARG KUBESEAL_VERSION=0.19.2
+# gcr.io/google.com/cloudsdktool/google-cloud-cli
+ARG CLOUD_SDK_VERSION=423.0.0
 
 # ========================
 RUN apk add --no-cache git unzip groff build-base libffi-dev cmake
@@ -34,9 +38,11 @@ RUN find /usr/local/aws-cli/v2/current/dist/awscli/botocore/data -name examples-
 FROM python:3.10.5-alpine${ALPINE_VERSION}
 
 ARG HELM_VERSION=3.10.2
-ARG KUBECTL_VERSION=1.24.8
+ARG KUBECTL_VERSION=1.25.8
 ARG KUSTOMIZE_VERSION=v4.5.7
 ARG KUBESEAL_VERSION=0.19.2
+# gcr.io/google.com/cloudsdktool/google-cloud-cli
+ARG CLOUD_SDK_VERSION=423.0.0
 
 # Install helm (latest release)
 # ENV BASE_URL="https://storage.googleapis.com/kubernetes-helm"
@@ -86,5 +92,20 @@ RUN apk add --update --no-cache gettext
 # Install kubeseal
 RUN curl -L https://github.com/bitnami-labs/sealed-secrets/releases/download/v${KUBESEAL_VERSION}/kubeseal-${KUBESEAL_VERSION}-linux-amd64.tar.gz -o - | tar xz -C /usr/bin/ && \
     chmod +x /usr/bin/kubeseal
+
+# Install gcloud
+RUN curl --silent --fail --show-error -L -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
+    mkdir -p /google && \
+    tar xzf google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz -C /google && \
+    rm -f google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
+    /google/google-cloud-sdk/bin/gcloud config set core/disable_usage_reporting true && \
+    /google/google-cloud-sdk/bin/gcloud config set component_manager/disable_update_check true && \
+    /google/google-cloud-sdk/bin/gcloud components install --quiet gke-gcloud-auth-plugin
+
+# Needed to use new GKE auth mechanism for kubeconfig
+ENV USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
+# Final PATH environment variable
+ENV PATH="/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/google/google-cloud-sdk/bin"
 
 ENTRYPOINT ["/bin/ash", "-c"]
