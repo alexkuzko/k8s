@@ -3,7 +3,7 @@ ARG ALPINE_VERSION=3.16
 # Ignore to update versions here (and after FROM alpine line below), example:
 # docker build --no-cache --build-arg KUBECTL_VERSION=1.25.8 -t alexkuzko/k8s:1.25.8 -t alexkuzko/k8s:1.25 .
 # to build AWS CDK based on Node LTS image:
-# docker build --no-cache --build-arg KUBECTL_VERSION=1.25.8 -t alexkuzko/k8s-cdk:1.25.8 -t alexkuzko/k8s-cdk:1.25 -f Dockerfile.node .
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.25.8 -t alexkuzko/k8s-cdk:1.25.8 -t alexkuzko/k8s-cdk:1.25 -f Dockerfile.cdk .
 
 # replaced python image with node image as it will be easier to install python than compile node
 #FROM python:3.10.5-alpine${ALPINE_VERSION}
