@@ -2,15 +2,15 @@ ARG ALPINE_VERSION=3.18
 FROM python:3.11.4-alpine${ALPINE_VERSION} as builder
 
 # Ignore to update versions here (and after FROM alpine line below), example:
-# docker build --no-cache --build-arg KUBECTL_VERSION=1.27.3 -t alexkuzko/k8s:1.27.3 -t alexkuzko/k8s:1.27 .
-# docker push alexkuzko/k8s:1.27.3 && docker push alexkuzko/k8s:1.27
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.29.4 -t alexkuzko/k8s:1.29.4 -t alexkuzko/k8s:1.29 .
+# docker push alexkuzko/k8s:1.29.4 && docker push alexkuzko/k8s:1.29
 # to build AWS CDK based on Node LTS image:
-# docker build --no-cache --build-arg KUBECTL_VERSION=1.27.3 -t alexkuzko/k8s-cdk:1.27.3 -t alexkuzko/k8s-cdk:1.27 -f Dockerfile.cdk .
-# docker push alexkuzko/k8s-cdk:1.27.3 && docker push alexkuzko/k8s-cdk:1.27
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.29.4 -t alexkuzko/k8s-cdk:1.29.4 -t alexkuzko/k8s-cdk:1.29 -f Dockerfile.cdk .
+# docker push alexkuzko/k8s-cdk:1.29.4 && docker push alexkuzko/k8s-cdk:1.29
 
 ARG AWS_CLI_VERSION=2.12.4
 ARG HELM_VERSION=3.12.0
-ARG KUBECTL_VERSION=1.27.3
+ARG KUBECTL_VERSION=1.29.4
 ARG KUSTOMIZE_VERSION=v5.1.0
 ARG KUBESEAL_VERSION=0.22.0
 # gcr.io/google.com/cloudsdktool/google-cloud-cli
@@ -40,7 +40,7 @@ RUN find /usr/local/aws-cli/v2/current/dist/awscli/botocore/data -name examples-
 FROM python:3.11.4-alpine${ALPINE_VERSION}
 
 ARG HELM_VERSION=3.12.0
-ARG KUBECTL_VERSION=1.27.3
+ARG KUBECTL_VERSION=1.29.4
 ARG KUSTOMIZE_VERSION=v5.1.0
 ARG KUBESEAL_VERSION=0.22.0
 # gcr.io/google.com/cloudsdktool/google-cloud-cli
