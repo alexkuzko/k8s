@@ -1,21 +1,21 @@
-ARG ALPINE_VERSION=3.18
+ARG ALPINE_VERSION=3.19
 
 # Ignore to update versions here (and after FROM alpine line below), example:
-# docker build --no-cache --build-arg KUBECTL_VERSION=1.29.4 -t alexkuzko/k8s:1.29.4 -t alexkuzko/k8s:1.29 .
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.31.10 -t alexkuzko/k8s:1.31.10 -t alexkuzko/k8s:1.31 .
 # to build AWS CDK based on Node LTS image:
-# docker build --no-cache --build-arg KUBECTL_VERSION=1.29.4 -t alexkuzko/k8s-cdk:1.29.4 -t alexkuzko/k8s-cdk:1.29 -f Dockerfile.cdk .
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.31.10 -t alexkuzko/k8s-cdk:1.31.10 -t alexkuzko/k8s-cdk:1.31 -f Dockerfile.cdk .
 
 # replaced python image with node image as it will be easier to install python than compile node
-#FROM python:3.11.4-alpine${ALPINE_VERSION}
+#FROM python:3.11-alpine${ALPINE_VERSION}
 FROM node:lts-alpine${ALPINE_VERSION}
 
-ARG AWS_CLI_VERSION=2.12.4
-ARG HELM_VERSION=3.12.0
-ARG KUBECTL_VERSION=1.29.4
+ARG AWS_CLI_VERSION=2.22.24
+ARG HELM_VERSION=3.15.3
+ARG KUBECTL_VERSION=1.31.10
 ARG KUSTOMIZE_VERSION=v5.1.0
 ARG KUBESEAL_VERSION=0.22.0
 # gcr.io/google.com/cloudsdktool/google-cloud-cli
-ARG CLOUD_SDK_VERSION=437.0.0
+ARG CLOUD_SDK_VERSION=487.0.0
 ARG AWSCDK_VERSION=2.85.0
 
 # Install helm (latest release)
@@ -95,8 +95,14 @@ RUN apk add --update --no-cache jq yq && \
 RUN apk add --update --no-cache gettext && \
     rm -rf /var/cache/apk/*
 
+# Install python3 (managed versions only)
+#RUN apk add --update --no-cache python3 py3-pip py3-boto3 py3-jsonschema-specifications py3-yaml && \
+#    rm -rf /var/cache/apk/*
+
 # Install python3
 RUN apk add --update --no-cache python3 python3-dev && \
+    python3 -m venv venv && \
+    . venv/bin/activate && \
     python3 -m ensurepip && \
     pip3 install --upgrade pip && \
     pip3 install boto3 json-spec yamllint && \
@@ -111,7 +117,7 @@ RUN curl -L https://github.com/bitnami-labs/sealed-secrets/releases/download/v${
     chmod +x /usr/bin/kubeseal
 
 # Install gcloud
-RUN curl --silent --fail --show-error -L -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
+RUN python3 --version && curl --silent --fail --show-error -L -O https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
     mkdir -p /google && \
     tar xzf google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz -C /google && \
     rm -f google-cloud-sdk-${CLOUD_SDK_VERSION}-linux-x86_64.tar.gz && \
