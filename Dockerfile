@@ -66,8 +66,12 @@ RUN helm plugin install https://github.com/quintush/helm-unittest && rm -rf /tmp
 RUN helm plugin install https://github.com/chartmuseum/helm-push && rm -rf /tmp/helm-*
 
 # Install kubectl (same version of aws esk)
-RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
-    mv kubectl /usr/bin/kubectl && \
+# replaced with storage.googleapis.com/kubernetes-release/release replaced with dl.k8s.io
+#RUN curl -sLO https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl && \
+RUN curl -sLO https://dl.k8s.io/v${KUBECTL_VERSION}/kubernetes-client-linux-amd64.tar.gz && \
+    tar zxf kubernetes-client-linux-amd64.tar.gz && \
+    mv kubernetes/client/bin/kubectl /usr/bin/kubectl && \
+    /bin/rm -rf kubernetes* && \
     chmod +x /usr/bin/kubectl
 
 # Install kustomize (latest release)
