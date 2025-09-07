@@ -4,9 +4,14 @@ FROM python:3.11-alpine${ALPINE_VERSION} AS builder
 # Ignore to update versions here (and after FROM alpine line below), example:
 # docker build --no-cache --build-arg KUBECTL_VERSION=1.32.6 -t alexkuzko/k8s:1.32.6 -t alexkuzko/k8s:1.32 .
 # docker push alexkuzko/k8s:1.32.6 && docker push alexkuzko/k8s:1.32
-# to build AWS CDK based on Node LTS image:
+
+# to build AWS CDK based on Node LTS image (malfunction):
 # docker build --no-cache --build-arg KUBECTL_VERSION=1.32.6 -t alexkuzko/k8s-cdk:1.32.6 -t alexkuzko/k8s-cdk:1.32 -f Dockerfile.cdk .
 # docker push alexkuzko/k8s-cdk:1.32.6 && docker push alexkuzko/k8s-cdk:1.32
+
+# to build image with all deps installed (postgresql, rsync):
+# docker build --no-cache -t alexkuzko/k8s-full:1.32.6 -t alexkuzko/k8s-full:1.32 -f Dockerfile.full .
+# docker push alexkuzko/k8s-full:1.32.6 && docker push alexkuzko/k8s-full:1.32
 
 ARG AWS_CLI_VERSION=2.22.24
 ARG HELM_VERSION=3.15.3
