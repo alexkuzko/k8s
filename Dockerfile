@@ -1,25 +1,25 @@
-ARG ALPINE_VERSION=3.19
+ARG ALPINE_VERSION=3.22
 FROM python:3.11-alpine${ALPINE_VERSION} AS builder
 
 # Ignore to update versions here (and after FROM alpine line below), example:
-# docker build --no-cache --build-arg KUBECTL_VERSION=1.32.6 -t alexkuzko/k8s:1.32.6 -t alexkuzko/k8s:1.32 .
-# docker push alexkuzko/k8s:1.32.6 && docker push alexkuzko/k8s:1.32
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.33.7 -t alexkuzko/k8s:1.33.7 -t alexkuzko/k8s:1.33 .
+# docker push alexkuzko/k8s:1.33.7 && docker push alexkuzko/k8s:1.33
 
 # to build AWS CDK based on Node LTS image (malfunction):
-# docker build --no-cache --build-arg KUBECTL_VERSION=1.32.6 -t alexkuzko/k8s-cdk:1.32.6 -t alexkuzko/k8s-cdk:1.32 -f Dockerfile.cdk .
-# docker push alexkuzko/k8s-cdk:1.32.6 && docker push alexkuzko/k8s-cdk:1.32
+# docker build --no-cache --build-arg KUBECTL_VERSION=1.33.7 -t alexkuzko/k8s-cdk:1.33.7 -t alexkuzko/k8s-cdk:1.33 -f Dockerfile.cdk .
+# docker push alexkuzko/k8s-cdk:1.33.7 && docker push alexkuzko/k8s-cdk:1.33
 
 # to build image with all deps installed (postgresql, rsync):
-# docker build --no-cache -t alexkuzko/k8s-full:1.32.6 -t alexkuzko/k8s-full:1.32 -f Dockerfile.full .
-# docker push alexkuzko/k8s-full:1.32.6 && docker push alexkuzko/k8s-full:1.32
+# docker build --no-cache -t alexkuzko/k8s-full:1.33.7 -t alexkuzko/k8s-full:1.33 -f Dockerfile.full .
+# docker push alexkuzko/k8s-full:1.33.7 && docker push alexkuzko/k8s-full:1.33
 
-ARG AWS_CLI_VERSION=2.22.24
-ARG HELM_VERSION=3.15.3
-ARG KUBECTL_VERSION=1.32.6
-ARG KUSTOMIZE_VERSION=v5.1.0
-ARG KUBESEAL_VERSION=0.22.0
+ARG AWS_CLI_VERSION=2.33.7
+ARG HELM_VERSION=3.18.6
+ARG KUBECTL_VERSION=1.33.7
+ARG KUSTOMIZE_VERSION=v5.7.1
+ARG KUBESEAL_VERSION=0.31.0
 # gcr.io/google.com/cloudsdktool/google-cloud-cli
-ARG CLOUD_SDK_VERSION=487.0.0
+ARG CLOUD_SDK_VERSION=537.0.0
 
 # ========================
 RUN apk add --no-cache git unzip groff build-base libffi-dev cmake
@@ -44,12 +44,12 @@ RUN find /usr/local/aws-cli/v2/current/dist/awscli/botocore/data -name examples-
 
 FROM python:3.11-alpine${ALPINE_VERSION}
 
-ARG HELM_VERSION=3.15.3
-ARG KUBECTL_VERSION=1.32.6
-ARG KUSTOMIZE_VERSION=v5.1.0
-ARG KUBESEAL_VERSION=0.22.0
+ARG HELM_VERSION=3.18.6
+ARG KUBECTL_VERSION=1.33.7
+ARG KUSTOMIZE_VERSION=v5.7.1
+ARG KUBESEAL_VERSION=0.31.0
 # gcr.io/google.com/cloudsdktool/google-cloud-cli
-ARG CLOUD_SDK_VERSION=487.0.0
+ARG CLOUD_SDK_VERSION=537.0.0
 
 # Install helm (latest release)
 # ENV BASE_URL="https://storage.googleapis.com/kubernetes-helm"
